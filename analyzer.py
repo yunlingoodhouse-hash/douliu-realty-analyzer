@@ -145,12 +145,15 @@ else:
         most_frequent_unit_price = mode_unit_price.iloc[0] if not mode_unit_price.empty else filtered_df['unit_price_per_ping'].mean()
         most_frequent_total_price = mode_total_price.iloc[0] if not mode_total_price.empty else filtered_df['total_price'].mean()
 
-        # Altair 圖表基礎設定 (嘗試加入中文字體優化)
-        # 由於無法安裝系統字體，這裡使用通用字體
-        chart_config = alt.Chart(df_trend).encode(
+        # --- 成交單價趨勢圖 ---
+        st.header("成交單價趨勢 (按月平均)")
+        
+        # **定義單價基礎圖表**
+        base_unit_chart = alt.Chart(df_trend).encode(
             x=alt.X('date_of_transaction', title='成交時間', axis=alt.Axis(format="%Y-%m")),
+            y=alt.Y('unit_price_per_ping', title='單價 (萬元/坪)'),
         ).properties(
-            title='房地產趨勢分析'
+            title='成交單價趨勢'
         ).configure_axis(
             labelFont='sans-serif',
             titleFont='sans-serif'
@@ -158,45 +161,61 @@ else:
             font='sans-serif'
         )
 
-        # --- 成交單價趨勢圖 ---
-        st.header("成交單價趨勢 (按月平均)")
-        
-        line_unit = chart_config.mark_line(point=True).encode(
-            y=alt.Y('unit_price_per_ping', title='單價 (萬元/坪)'),
+        # 趨勢線圖
+        line_unit = base_unit_chart.mark_line(point=True).encode(
             tooltip=[
                 alt.Tooltip('date_of_transaction', title='月份', format="%Y-%m"), 
                 alt.Tooltip('unit_price_per_ping', title='平均單價', format=".2f")
             ]
         )
         
-        # 標示眾數線
-        rule_unit = alt.Chart(pd.DataFrame({'y': [most_frequent_unit_price]})).mark_rule(color='red', strokeDash=[5, 5]).encode(
-            y='y',
-            tooltip=[alt.Tooltip('y', title='最常見單價', format=".2f")]
+        # 標示眾數線（使用獨立數據源，但 Y 軸名稱與主圖表一致）
+        rule_unit = alt.Chart(pd.DataFrame({'unit_price_per_ping': [most_frequent_unit_price]})).mark_rule(
+            color='red', 
+            strokeDash=[5, 5]
+        ).encode(
+            y='unit_price_per_ping:Q',
+            tooltip=[alt.Tooltip('unit_price_per_ping', title='最常見單價', format=".2f")]
         )
         
-        # **修正點：使用 alt.layer 疊加圖表**
-        st.altair_chart(alt.layer(line_unit, rule_unit), use_container_width=True)
+        # **使用 + 運算符疊加圖表 (修正)**
+        st.altair_chart(line_unit + rule_unit, use_container_width=True)
 
         # --- 總價趨勢圖 ---
         st.header("總價趨勢 (按月平均)")
         
-        line_total = chart_config.mark_line(point=True).encode(
+        # **定義總價基礎圖表**
+        base_total_chart = alt.Chart(df_trend).encode(
+            x=alt.X('date_of_transaction', title='成交時間', axis=alt.Axis(format="%Y-%m")),
             y=alt.Y('total_price', title='總價 (萬元)'),
+        ).properties(
+            title='總價趨勢'
+        ).configure_axis(
+            labelFont='sans-serif',
+            titleFont='sans-serif'
+        ).configure_title(
+            font='sans-serif'
+        )
+
+        # 趨勢線圖
+        line_total = base_total_chart.mark_line(point=True).encode(
             tooltip=[
                 alt.Tooltip('date_of_transaction', title='月份', format="%Y-%m"), 
                 alt.Tooltip('total_price', title='平均總價', format=".0f")
             ]
         )
         
-        # 標示眾數線
-        rule_total = alt.Chart(pd.DataFrame({'y': [most_frequent_total_price]})).mark_rule(color='red', strokeDash=[5, 5]).encode(
-            y='y',
-            tooltip=[alt.Tooltip('y', title='最常見總價', format=".0f")]
+        # 標示眾數線（使用獨立數據源，但 Y 軸名稱與主圖表一致）
+        rule_total = alt.Chart(pd.DataFrame({'total_price': [most_frequent_total_price]})).mark_rule(
+            color='red', 
+            strokeDash=[5, 5]
+        ).encode(
+            y='total_price:Q',
+            tooltip=[alt.Tooltip('total_price', title='最常見總價', format=".0f")]
         )
         
-        # **修正點：使用 alt.layer 疊加圖表**
-        st.altair_chart(alt.layer(line_total, rule_total), use_container_width=True)
+        # **使用 + 運算符疊加圖表 (修正)**
+        st.altair_chart(line_total + rule_total, use_container_width=True)
 
         # 5. 顯示數據表格 (完整篩選後的數據)
         st.header("原始數據表格")

@@ -175,7 +175,8 @@ else:
             tooltip=[alt.Tooltip('y', title='最常見單價', format=".2f")]
         )
         
-        st.altair_chart(line_unit + rule_unit, use_container_width=True)
+        # **修正點：使用 alt.layer 疊加圖表**
+        st.altair_chart(alt.layer(line_unit, rule_unit), use_container_width=True)
 
         # --- 總價趨勢圖 ---
         st.header("總價趨勢 (按月平均)")
@@ -194,9 +195,9 @@ else:
             tooltip=[alt.Tooltip('y', title='最常見總價', format=".0f")]
         )
         
-        st.altair_chart(line_total + rule_total, use_container_width=True)
+        # **修正點：使用 alt.layer 疊加圖表**
+        st.altair_chart(alt.layer(line_total, rule_total), use_container_width=True)
 
         # 5. 顯示數據表格 (完整篩選後的數據)
         st.header("原始數據表格")
         st.dataframe(filtered_df)
-
